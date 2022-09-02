@@ -5,7 +5,7 @@ const Op = db.Sequelize.Op;
 
 // Create and Save a new Tutorial
 exports.create = (req, res) => {
-    console.log("=====================> Tutorial ")
+    // console.log("=====================> Tutorial ")
   // Validate request
     // console.log(req)
   if (!req.body.title) {

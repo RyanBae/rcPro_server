@@ -1,22 +1,25 @@
 // src/server.js
 const express = require("express");
 const bodyParser = require("body-parser");
-const socket = require("socket.io");
-const http = require("http");
 const fs = require("fs")
 const cors = require("cors");
+var path = require('path');
 
 
 const app = express();
+app.set('views', path.join(__dirname, 'views'));
+// app.set('view engine', 'ejs');
+// app.engine('html', require('ejs').renderFile);
+app.use(express.static(path.join(__dirname, 'public')));
+// const http = require("http").Server(app);
+// const socket = require("socket.io")(http);
 
 var corsOptions = {
   origin: "http://localhost:3031"
 };
 
 app.use(cors(corsOptions));
-
 app.use(bodyParser.json());
-
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const db = require("./models");
@@ -27,10 +30,15 @@ db.sequelize.sync();
 //   console.log("Drop and re-sync db.");
 // });
 
+// =========== Routes Add Area ===========
 require("./routes/tutorial.routes")(app);
+require("./routes/socket.routes")(app);
+
+// =========== Routes Add Area ===========
 
 const PORT = process.env.PORT || 3030;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
  
+module.exports = app;
