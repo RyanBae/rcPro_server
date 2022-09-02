@@ -21,13 +21,15 @@
       <input type="submit" class="chat" value="chat"/>
     </form>
     <div id="box" class="box">
+    <!-- <script src="http://localhost:3030/socket.io/socket.io.js"></script> 1 -->
     <script src="/socket.io/socket.io.js"></script> <!-- 1 -->
     <script src="//code.jquery.com/jquery-1.11.1.js"></script>
     <script>
 
       $()
 
-      var socket = io(); //1
+      // var socket = io.connect('http://localhost:3030');
+      var socket = io();
       $('#chat').on('submit', function(e){ //2
         socket.emit('send message', $('#name').val(), $('#message').val());
         $('#message').val('');

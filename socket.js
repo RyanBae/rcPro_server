@@ -5,7 +5,7 @@ var http = require('http').Server(app); //1
 var io = require('socket.io')(http);    //1
 
 app.get('/',function(req, res){  //2
-  res.sendFile(__dirname + '/client.html');
+  res.sendFile(__dirname + '/views/client.html');
 });
 
 var count=1;
@@ -25,6 +25,6 @@ io.on('connection', function(socket){ //3
   });
 });
 
-http.listen(3000, function(){ //4
+http.listen(3030, function(){ //4
   console.log('server on!');
 });

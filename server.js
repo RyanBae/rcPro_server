@@ -1,12 +1,18 @@
 // src/server.js
 const express = require("express");
+
 const bodyParser = require("body-parser");
 const fs = require("fs")
 const cors = require("cors");
 var path = require('path');
 
 
-const app = express();
+var app = express();
+
+// var http = require('http').Server(app); 
+// var io = require('socket.io')(http);    
+
+
 app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'ejs');
 // app.engine('html', require('ejs').renderFile);
@@ -37,6 +43,7 @@ require("./routes/socket.routes")(app);
 // =========== Routes Add Area ===========
 
 const PORT = process.env.PORT || 3030;
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
