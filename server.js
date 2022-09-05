@@ -1,30 +1,27 @@
 // src/server.js
 const express = require("express");
-
+const Http = require("http");
 const bodyParser = require("body-parser");
 const fs = require("fs")
 const cors = require("cors");
-var path = require('path');
+const path = require('path');
 
 
-var app = express();
-
-// var http = require('http').Server(app); 
-// var io = require('socket.io')(http);    
+const app = express();
+const http = Http.createServer(app);
 
 
 app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'ejs');
 // app.engine('html', require('ejs').renderFile);
 app.use(express.static(path.join(__dirname, 'public')));
-// const http = require("http").Server(app);
-// const socket = require("socket.io")(http);
 
-var corsOptions = {
-  origin: "http://localhost:3031"
-};
+// //
+// var corsOptions = {
+//   origin: "http://localhost:3031"
+// };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -39,13 +36,15 @@ db.sequelize.sync();
 // =========== Routes Add Area ===========
 require("./routes/tutorial.routes")(app);
 require("./routes/socket.routes")(app);
+// require("./socket");
+
 
 // =========== Routes Add Area ===========
 
 const PORT = process.env.PORT || 3030;
 
-app.listen(PORT, () => {
+http.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
  
-module.exports = app;
+module.exports = http;

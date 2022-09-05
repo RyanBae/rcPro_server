@@ -12,37 +12,99 @@
     </style>
   </head>
   <body>
+    <li id="usercount"></li>
     <div>
       <textarea id="chatLog" class="chat_log" readonly></textarea>
     </div>
+
     <form id="chat">
-      <input id="name" class="name" type="text" readonly>
+      <input id="name" class="name" type="text">
       <input id="message" class="message" type="text">
       <input type="submit" class="chat" value="chat"/>
     </form>
     <div id="box" class="box">
+      <div id="typings">
+        <!-- <p id="typing"></p> -->
+      </div>
     <!-- <script src="http://localhost:3030/socket.io/socket.io.js"></script> 1 -->
     <script src="/socket.io/socket.io.js"></script> <!-- 1 -->
     <script src="//code.jquery.com/jquery-1.11.1.js"></script>
     <script>
 
-      $()
 
       // var socket = io.connect('http://localhost:3030');
       var socket = io();
+      console.log(socket)
       $('#chat').on('submit', function(e){ //2
         socket.emit('send message', $('#name').val(), $('#message').val());
         $('#message').val('');
         $('#message').focus();
         e.preventDefault();
+        
       });
+
+      socket.on('usercount', (count) => {
+            var userCounter = document.getElementById('usercount');
+            userCounter.innerText = "접속자 " + count + "명";
+
+            
+        });
       socket.on('receive message', function(msg){ //3
         $('#chatLog').append(msg+'\n');
         $('#chatLog').scrollTop($('#chatLog')[0].scrollHeight);
+        $('#typings').empty();
       });
       socket.on('change name', function(name){ //4
         $('#name').val(name);
       });
+
+      let typingList = [];
+      socket.on('receive typing', function(list){
+        $('#typings').empty();
+        // console.log(list)
+        // console.log(list.length)
+     
+        for(let i in list){
+          console.log(list[i])
+          if(list[i] !== $('#name').val()){
+            if($('#t_'+list[i]).length === 0){
+              $('#typings').append("<p id=t_"+list[i]+">"+list[i]+"님이 작성중입니다...</p>")
+              typingList.push(list[i]);
+            }
+          }
+          // if(typingList.includes(list[i])){
+          //   console.log("!!!")
+          //   if($('#t_'+list[i]).length > 0){
+          //     $('#t_'+list[i]).remove();
+               
+          //   }
+          // }
+
+        }
+
+        if(list.length === 0){
+          console.log("!!!!!!!!! 000")
+          $('#typings').empty();
+        }
+
+        
+      });
+
+
+      // 타이핑 중 이벤트 
+      // $(function(){
+        $('#message').on('input', function(){
+          // console.log(".. ")
+          if($('#message').val()==''){
+            // console.log("0")
+            socket.emit('send typing', $('#name').val(), 0)
+          }else{
+            // console.log("1")
+            socket.emit('send typing', $('#name').val(), 1)
+          }
+        })
+      // });
+      
     </script>
   </body>
 </html>
