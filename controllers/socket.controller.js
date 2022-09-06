@@ -18,13 +18,13 @@ exports.rooms = (res, req) =>{
 }
 
 exports.socketPage = (res, req) =>{
-    console.log("Socket Page")
+    // console.log("Socket Page")
     require("../socket");
     // io.socketOn();
     // io.chatSpace
     
     req.sendFile(path.join(__dirname, '..', 'views/client.html'));
-    console.log("Process End ")
+    // console.log("Process End ")
 }
 
 exports.connection = (res, req) => {
