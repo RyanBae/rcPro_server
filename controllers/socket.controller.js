@@ -1,6 +1,7 @@
 
 const path = require("path")
 const fs = require("fs")
+const socketService = require('../service/socket.service');
 // const io  = require("../socket");
 
 // var app = require('http').createServer(handler);
@@ -32,3 +33,13 @@ exports.connection = (res, req) => {
     // require("../socket");
     // io.socketOn();
 }
+
+exports.registerRoom = (req, socketId, res) =>{
+    console.log("Register Room ");
+    console.log("req : ", req);
+    // console.log("res : ", res);
+    return socketService.create(req, socketId);
+
+}
+
+

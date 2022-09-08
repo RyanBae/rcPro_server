@@ -29,9 +29,7 @@ const db = require("./models");
 
 db.sequelize.sync();
 // 개발 중에는 기존 테이블을 삭제하고 데이터베이스를 다시 동기화해야 할 수 있습니다. force: true다음 코드로 사용
-// db.sequelize.sync({ force: true }).then(() => {
-//   console.log("Drop and re-sync db.");
-// });
+// db.sequelize.sync({ force: true }).then(() => {console.log("Drop and re-sync db.");});
 
 // =========== Routes Add Area ===========
 require("./routes/tutorial.routes")(app);

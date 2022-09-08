@@ -36,7 +36,8 @@
           <li>room4 <button>입장</button></li> -->
         </ul>
         <form id="new-room">
-          <input id="room-name" type="text"placeholder="방제목입력">
+          <input id="room-name" name="room-name" type="text" placeholder="방제목입력">
+          <input id="room-password" name="room-password" type="password", placeholder="비밀번호" ></input>
           <input type="submit", value="입장" ></input>
         </form>
     </div>
@@ -76,6 +77,31 @@
     <script src="//code.jquery.com/jquery-1.11.1.js"></script>
     <script>
 
+      var notiPer = false;
+      $(function(){
+        console.log("!!!!Start !!")
+        getNotificationPermission();
+
+      });
+
+      //알림 권한 요청
+      function getNotificationPermission() {
+        // 브라우저 지원 여부 체크    
+        if(!("Notification" in window)){
+          alert("데스크톱 알림을 지원하지 않는 브라우저입니다.");}
+          // 데스크탑 알림 권한 요청    
+          Notification.requestPermission(function (result) {
+            // 권한 거절        
+            if(result == 'denied') {
+              alert('알림을 차단하셨습니다.\n브라우저의 사이트 설정에서 변경하실 수 있습니다.');            
+              notiPer = false;
+              return false;
+            }else{
+              notiPer = true;
+            }
+          });
+        }
+
       var socket = io();
       var roomsText = $('#rooms');
       
@@ -91,8 +117,8 @@
       });
 
       $('#user-name-chg').on('submit', function(e){
-        socket.emit('setUserName', $('#user-name').val());
         e.preventDefault();
+        socket.emit('setUserName', $('#user-name').val());
       });
 
 
@@ -118,16 +144,25 @@
 
       // 새로운 방 생성
       $('#new-room').on('submit', function(e){
+        e.preventDefault();
           console.log(" new Room !!")
-          socket.emit('newRoom', $('#room-name').val());
-          e.preventDefault();
+          console.log($('input[name="room-name"]').val());
+          console.log($('input[name="room-password"]').val());
+          // return 
+          let room ={
+            title : $('input[name="room-name"]').val(),
+            roomPassword : $('input[name="room-password"]').val(),
+            state : true
+          }
+          socket.emit('newRoom', room);
       });
 
       $(document).on("click", '.con-room-btn', function(e){
+        e.preventDefault();
         // console.log("입장 클릭");
         // console.log($(this).attr('data-room'))
+        
         socket.emit('conRoom',$(this).attr('data-room'))
-        e.preventDefault();
       })
 
 
@@ -157,11 +192,12 @@
 
       socket.on('roomUserCount', (count)=>{
         console.log(count)
-          $('.room-user-count').text('참가자 : '+count);
+          $('.room-user-count').text('참가자 : '+count +" 명");
       })
       
       // 방 나가기 
       $('#exit-btn').on("click", function(e){
+        e.preventDefault();
         // console.log(" Exit!!")
         // $('#chatLog').val('');
         socket.emit('reaveRoom')
@@ -176,26 +212,43 @@
         $('.user-area').removeClass('hide-area');
         $('.user-area').addClass('show-area');
         $('.chat-log-area').empty();
-        e.preventDefault();
+        $('#rooms').empty();
+        socket.emit('getRooms');
       });
 
 
-      socket.on('receiveMessage', function(msg, type){ //3
+      socket.on('receiveMessage', function(msg, type, user){ //3
         // console.log(msg);
         // console.log(type)
         $('#chatLog').append(msg+'\n');
         $('#chatLog').scrollTop($('#chatLog')[0].scrollHeight);
+        $(document).focus();
+        if(notiPer){
+          if(user !== $('#name').val()){
+            notify(msg);
+          }
+        }
         // $('#typings').empty();
       });
 
      $('#chat').on('submit', function(e){ //2
+      e.preventDefault();
         socket.emit('sendMessage', $('#name').val(), $('#message').val());
         $('#message').val('');
         $('#message').focus();
-        e.preventDefault();
         
       });
 
+    // 알림 띄우기
+    function notify(msg){
+      var options = {
+        body:msg}
+        // 데스크탑 알림 요청    
+        var notification = new Notification("[Noti]", options);
+        // 3초뒤 알람 닫기    
+        setTimeout(function(){
+          notification.close();
+        },1500);}
 
 
       // // var socket = io.connect('http://localhost:3030');

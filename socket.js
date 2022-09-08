@@ -2,6 +2,7 @@ const SocketIO = require("socket.io");
 const http = require("./server");
 const { instrument } = require("@socket.io/admin-ui");
 // const { rooms } = require("./controllers/socket.controller");
+const socketController = require("./controllers/socket.controller");
 
 // console.log(http)
 const io = SocketIO(http,{
@@ -60,12 +61,12 @@ instrument(io, {
     // console.log("roomName!!! : "+roomname)
     rooms.forEach((_, key)=>{
         if(key === roomname){
-            console.log("====================================")
-            console.log("_"+_);
-            console.log("key"+key);
-            console.log(rooms[key])
-            userFromRoom.push(_);
-            console.log("====================================")
+            // console.log("====================================")
+            // console.log("_ : "+Array.from(_));
+            // console.log("key : "+key);
+            // console.log(rooms[key])
+            userFromRoom.push(Array.from(_));
+            // console.log("====================================")
         }
     });
     // console.log("userFrom Rooms")
@@ -100,11 +101,13 @@ io.on('connection', function(socket){
 
     // 유저 이름 변경 
     socket.on('setUserName', (chgName) => {
-        console.log(" Set User Name")
-        console.log("Sockid : "+socket.id)
-        _userName = chgName;
-        console.log('Change UserName -> Socket ID: ', socket.id, ", UserName : ",_userName);
-        io.to(socket.id).emit('getUserName', _userName)
+        if(_userName !== chgName){
+            // console.log(" Set User Name")
+            // console.log("Sockid : "+socket.id)
+            _userName = chgName;
+            // console.log('Change UserName -> Socket ID: ', socket.id, ", UserName : ",_userName);
+            io.to(socket.id).emit('getUserName', _userName)
+        }
     });
 
     // 클라이언트 유저 숫자 
@@ -114,48 +117,51 @@ io.on('connection', function(socket){
     socket.on('getRooms', () => { 
         // 다른 네임스페이스의 객체에도 접근할 수 있다.
         // console.log(io.sockets.adapter)
-        io.emit('rooms', publicRooms());
+        io.to(socket.id).emit('rooms', publicRooms());
     });
 
     // 새로운방 만들고 접속
     socket.on('newRoom', (data)=>{
-        // console.log(data)
-        roomName = data
+        console.log("New Room")
+        console.log(data)
+        // console.log(data.title)
+        // console.log(data.roomPassword)
+    
+        socketController.registerRoom(data, socket.id);
+        roomName = data.title
         socket.join(roomName);
         console.log("Sock ID : "+socket.id)
         console.log("Room Name : "+roomName)
         console.log('New Room -> Socket ID: ', socket.id, ", UserName : ",_userName);
-        // http.socket.emit("")
-        console.log("Public Rooms Fun =====")
-        // publicRooms();
-
-        console.log("UserFromRooms Fun =====");
-        // userFromRoom();
         io.to(roomName).emit('joinRoom', roomName);
-
+        
     });
 
+    // 방 접속시 메세지
     socket.on('conRoom',(data)=>{
         // console.log("Connection Room");
         roomName = data;
         socket.join(roomName);
         console.log('Connection User Room -> Socket ID: ', socket.id, ", UserName : ",_userName);
-
-
         io.to(roomName).emit('joinRoom', roomName);
     })
 
-    socket.on('disconnect', ()=>{ 
-      console.log('User Disconnected -> Socket ID : ', socket.id," , UserName : ",_userName);
-      socket.leave(roomName);
-      io.to(roomName).emit('receiveMessage',_userName+" 님이 퇴장하였습니다.")
-    });
+    // 연결이 종료 되었을경우
+    // socket.on('disconnect', ()=>{ 
+    //   console.log('User Disconnected -> Socket ID : ', socket.id," , UserName : ",_userName);
+    //   socket.leave(roomName);
+    //   console.log("disCon : "+roomName)
+    //   io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
+    //   io.to(roomName).emit('receiveMessage',_userName+" 님이 퇴장하였습니다.")
+    // });
 
+    // 방을 나갔을경우
     socket.on('reaveRoom', ()=>{
         console.log('User Leave Room -> Socket ID : ', socket.id," , UserName : ",_userName);
         socket.leave(roomName);
+        console.log("reave Room : "+roomName)
+        // io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
         io.to(roomName).emit('receiveMessage', _userName+" 님이 퇴장하였습니다.", 0);
-        io.emit('roomUserCount', userFromRoom(roomName));
     })
 
     // 접속자 메세지 남기기
@@ -163,13 +169,13 @@ io.on('connection', function(socket){
         // console.log("Conn -- ", _userName)
         console.log('User Con User Message -> Socket ID : ', socket.id," , UserName : ",_userName);
         io.to(roomName).emit('receiveMessage', _userName+" 님이 입장하였습니다.", 0);
-        io.emit('roomUserCount', userFromRoom(roomName));
+        io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
     });
 
     socket.on('sendMessage', function(name,text){ //3-3
       var msg = name + ' : ' + text;
       console.log(msg);
-      io.to(roomName).emit('receiveMessage', msg, 1);
+      io.to(roomName).emit('receiveMessage', msg, 1, _userName);
     });
 
     socket.on('inUsers', ()=>{
@@ -179,7 +185,8 @@ io.on('connection', function(socket){
         // console.log(userFromRoom(roomName).size)
         // userFromRoom(roomName);
         // userFromRoom(roomName);
-        io.emit('roomUserCount', userFromRoom(roomName));
+        console.log(userFromRoom(roomName)[0].length)
+        io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
 
     })
 
