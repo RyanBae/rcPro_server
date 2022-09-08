@@ -35,11 +35,19 @@
           <li>room3 <button>입장</button></li>
           <li>room4 <button>입장</button></li> -->
         </ul>
-        <form id="new-room">
-          <input id="room-name" name="room-name" type="text" placeholder="방제목입력">
-          <input id="room-password" name="room-password" type="password", placeholder="비밀번호" ></input>
-          <input type="submit", value="입장" ></input>
-        </form>
+        <div style="display: flex;">
+          <form id="join-room">
+            <input id="room-id" name="room-id" type="hidden" >
+            <input id="room-name" name="room-name" type="text" placeholder="방제목입력">
+            <input id="room-password" name="room-password" type="password", placeholder="비밀번호" ></input>
+            <input type="submit", value="입장" ></input>
+          </form>
+          <form id="new-room" style="margin-left: 5px;">
+            <!-- <input id="room-name" name="room-name" type="text" placeholder="방제목입력"> -->
+            <!-- <input id="room-password" name="room-password" type="password", placeholder="비밀번호" ></input> -->
+            <input type="submit", value="방생성" ></input>
+          </form>
+        </div>
     </div>
     <div class="chat-area hide-area">
       <div style="display:flex;">
@@ -134,20 +142,26 @@
       socket.on('rooms', (rooms) => { // rooms 이벤트 발생
           // 룸 목록 업데이트
           roomsText.textContent = "";
-          // console.log(rooms)
-          for (let room in rooms) {
-            // console.log(room)
+          console.log(rooms)
+          for (let i in rooms) {
+            console.log(rooms[i])
               // roomsText.append(rooms[room] + "<br>");
-              roomsText.append('<li><button class="con-room-btn cursor-pointer" data-room="'+rooms[room]+'">입장</button>    '+rooms[room]+'</li>')
+              if(rooms[i].open_yn === 0){
+                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'</li>')
+              }else{
+                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'(비밀방)</li>')
+              }
           }
       });
 
+      
       // 새로운 방 생성
       $('#new-room').on('submit', function(e){
         e.preventDefault();
           console.log(" new Room !!")
           console.log($('input[name="room-name"]').val());
           console.log($('input[name="room-password"]').val());
+          // Todo 패스워드 입력 여부에 따라 상태 추가
           // return 
           let room ={
             title : $('input[name="room-name"]').val(),
@@ -156,13 +170,36 @@
           }
           socket.emit('newRoom', room);
       });
+      
+      let joinBtnPermission = false;
+      $('#join-room').on('click', function(e){
+        e.preventDefault();
+        console.log($(this).attr('data-id'))
+        console.log($('input[name=room-id]').val())
 
+        socket.emit('conRoom', $('input[name=room-id]').val())
+      })
+
+      // 방 로우 클릭시 input 셋팅후 비밀번호 있을경우 비밀번호 입력, 없을경우 입장
       $(document).on("click", '.con-room-btn', function(e){
         e.preventDefault();
+        console.log(" 로우 클릭")
+        console.log($(this).data('id'))
+        $('#room-name').val($(this).data('room'));
+        $('#room-id').val($(this).data('id'))
+        if($(this).data('open') === 0){
+          // $('')
+          socket.emit('conRoom',$(this).data('id'))
+        }else{
+          $('#room-password').focus();
+
+        }
+
         // console.log("입장 클릭");
         // console.log($(this).attr('data-room'))
+        // $()
         
-        socket.emit('conRoom',$(this).attr('data-room'))
+        // socket.emit('conRoom',$(this).attr('data-room'))
       })
 
 
@@ -183,6 +220,7 @@
         $('.user-area').removeClass('show-area');
         $('.user-area').addClass('hide-area');
         $('#room-name').val("")
+        $('#room-password').val("")
         // console.log(room)
         $('#con-room-name').text(room)
         socket.emit('conUserMsg');

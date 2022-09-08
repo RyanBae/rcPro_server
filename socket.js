@@ -114,10 +114,12 @@ io.on('connection', function(socket){
     io.emit('userCount', io.engine.clientsCount);
 
     // 룸 리스트 가져오기
-    socket.on('getRooms', () => { 
+    socket.on('getRooms', async () => { 
         // 다른 네임스페이스의 객체에도 접근할 수 있다.
         // console.log(io.sockets.adapter)
-        io.to(socket.id).emit('rooms', publicRooms());
+        
+        // io.to(socket.id).emit('rooms', publicRooms());
+        io.to(socket.id).emit('rooms', await socketController.getRooms());
     });
 
     // 새로운방 만들고 접속
@@ -139,7 +141,8 @@ io.on('connection', function(socket){
 
     // 방 접속시 메세지
     socket.on('conRoom',(data)=>{
-        // console.log("Connection Room");
+        console.log("Connection Room");
+        console.log(data)
         roomName = data;
         socket.join(roomName);
         console.log('Connection User Room -> Socket ID: ', socket.id, ", UserName : ",_userName);

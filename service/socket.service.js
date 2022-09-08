@@ -4,6 +4,12 @@ const db = require("../models");
 const Room = db.room;
 const Op = db.Sequelize.Op;
 
+/**
+ * 방 생성
+ * @param {Room} req 
+ * @param {SocketId} socketId 
+ * @param {*} res 
+ */
 exports.create = (req,socketId,res) =>{
     console.log(" Socket Service > Create");
 
@@ -15,41 +21,37 @@ exports.create = (req,socketId,res) =>{
         // return;
     }
 
+    let open_yn = false;
+    if(req.roomPassword.length > 0){
+        open_yn = true
+    }
+
     const room = {
         title : req.title,
         room_password : req.roomPassword,
         state : req.state ? req.state : false,
-        owner_id : socketId
+        owner_id : socketId,
+        open_yn : open_yn
     };
         
     Room.create(room)
     .then(data => {
-        // console.log('==============================  then')
         console.log(data)
-        // console.log('==============================  then 2')
-        // console.log(data.dataValues)
-        // roomIndex = data.dataValues.id
         res.send(data);
     })
     .catch(err => {
-        // console.log('==============================  catch')
         console.log(res);
-        // console.log(Room.Op);
-        // res.status(500).send({
-            // message:
-            //     err.message || "Some error occurred while creating the Room."
-            // });
         });
-        // console.log("=============================================")
-        // console.log(room)
-        // return roomIndex;
 }
 
 // Find a single Room with an id
 exports.findOne = (req, res) => {
     const id = req.params.id;
-    Room.findByPk(id).then(data =>{
-        res.send(data);
+    Room.findByPk({id, raw:true})
+    .then(data =>{
+        console.log("Find One "+id);
+        console.log("Result : "+ data)
+        // res.json(data);
     }).catch(err =>{
         if(err){
             console.log("Find One Error");
@@ -61,7 +63,32 @@ exports.findOne = (req, res) => {
   };
   
 //   find All 방 리스트 가져오기
-exports.findAll = (req, res) => {
+exports.findAll = async (req, res) => {
+    // const state = 
+    let condition = {state : {[Op.eq]: '1'}};
+    let result = [];
+    await Room.findAll({attributes:['id','title','open_yn','state'], where:condition, raw:true})
+    .then(data=>{
+        console.log("FindAll SuccessFully");
+        // console.log(data)
+        result = data
+        // return "Success!";
+    })
+    .catch(err=>{
+        if(err){
+            console.log(err)
+            console.log("Rooms Find All Error");
+            // return err
+        }
+    });
+    console.log("==========================================")
+    console.log(result)
+    return result;
+
+    // console.log(rooms)
+    // return rooms;
+    // console.log(result);
+    // return "Return";
 
 }
 

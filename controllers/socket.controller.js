@@ -18,13 +18,18 @@ exports.rooms = (res, req) =>{
 
 }
 
-exports.socketPage = (res, req) =>{
+/**
+ * 채팅페이지 렌딩/SocketIO 연결
+ * @param {*} res 
+ * @param {*} req 
+ */
+exports.socketPage = (req, res) =>{
     // console.log("Socket Page")
     require("../socket");
     // io.socketOn();
     // io.chatSpace
     
-    req.sendFile(path.join(__dirname, '..', 'views/client.html'));
+    res.sendFile(path.join(__dirname, '..', 'views/client.html'));
     // console.log("Process End ")
 }
 
@@ -34,6 +39,14 @@ exports.connection = (res, req) => {
     // io.socketOn();
 }
 
+/**
+ * 
+ * 방 생성
+ * @param {Room} req 
+ * @param {SocketId} socketId 
+ * @param {*} res 
+ * @returns 
+ */
 exports.registerRoom = (req, socketId, res) =>{
     console.log("Register Room ");
     console.log("req : ", req);
@@ -42,4 +55,18 @@ exports.registerRoom = (req, socketId, res) =>{
 
 }
 
+exports.getRooms = async (req, res) => {
+    console.log("[Controller] ====> getRooms");
+    // console.log(req)
+    // console.log(res)
+    // console.log(socketService.findAll())
+    //  console.log(await socketService.findAll())
+    return await socketService.findAll();
+    // return "";
+}
 
+exports.getRoom = async (req,res) =>{
+    console.log("[Controller] ====> getRoom ");
+
+    return await socketService.findOne(req);
+}
