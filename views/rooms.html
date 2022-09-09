@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Romms</title>
+    <style>
+      .chat_log{ width: 95%; height: 200px; }
+      .name{ width: 10%; }
+      .message{ width: 70%; }
+      .chat{ width: 10%; }
+    </style>
+  </head>
+  <body>
+    <div>
+ 
+
+    <!-- <form id="chat">
+      <input id="name" class="name" type="text">
+      <input id="message" class="message" type="text">
+      <input type="submit" class="chat" value="chat"/>
+    </form> -->
+    <ul id="messages" type="none">
+        <li id="usercount"></li>
+    </ul>
+    <button onclick="createRoom()">방생성</button>
+    <button onclick="getRooms()">방 목록 가져오기</button>
+
+    <p id="rooms"></p>
+
+
+    <!-- <script src="http://localhost:3030/socket.io/socket.io.js"></script> 1 -->
+    <script src="/socket.io/socket.io.js"></script> <!-- 1 -->
+    <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+
+
+      // var socket = io.connect('http://localhost:3030');
+      var socket = io.connect('/wait');
+      console.log(socket)
+      var roomsText = document.getElementById('rooms');
+
+      socket.on('usercount', (count) => {
+            var userCounter = document.getElementById('usercount');
+            userCounter.innerText = "현재 " + count + "명이 서버에 접속해있습니다.";
+
+            
+        });
+     
+    function createRoom(){
+        console.log("Create Click ")
+        let newroom = io.connect('/newRoom');
+        newroom.on("rooms", function(mes){
+            console.log(mes)
+        })
+
+    }
+     
+    function getRooms() { // 방 목록 가져오기 버튼 클릭시
+    // url을 지정해서 특정 네임스페이스를 들어갈 수 있다.
+        var debug = io.connect('/debug');
+
+        debug.emit('getRooms');  // getRooms 이벤트 호출
+
+        debug.on('rooms', (rooms) => { // rooms 이벤트 발생
+            // 룸 목록 업데이트
+            roomsText.textContent = "";
+            console.log(rooms)
+            for (let room in rooms) {
+                roomsText.innerHTML += room + "<br>";
+            }
+        });
+    }
+    </script>
+  </body>
+</html>

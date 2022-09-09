@@ -1,67 +1,72 @@
 
-var app = require('../server');
-var http = require('http').Server(app);
-const io = require("socket.io")(http);
 const path = require("path")
 const fs = require("fs")
+const socketService = require('../service/socket.service');
+// const io  = require("../socket");
+
 // var app = require('http').createServer(handler);
 // fs = require('fs'); 
 // const io = require('socket.io')(app); 
 // const PORT = process.env.PORT || 3030;
 
 // fs.readFile(path.join(__dirname, '..', '..', 'foo.bar'))
-exports.socketPage = (res, req) =>{
-    console.log("Socket Page")
-    // console.log(path.join(__dirname, '..', 'views/client.html'))
-
-    console.log(http)
+exports.rooms = (res, req) =>{
+    require("../socket");
+    // let ro = require("../server");
     
-    req.sendFile(path.join(__dirname, '..', 'views/client.html'));
-    console.log("Process End ")
+    req.sendFile(path.join(__dirname, '..', 'views/rooms.html'));
+
+}
+
+/**
+ * 채팅페이지 렌딩/SocketIO 연결
+ * @param {*} res 
+ * @param {*} req 
+ */
+exports.socketPage = (req, res) =>{
+    // console.log("Socket Page")
+    require("../socket");
+    // io.socketOn();
+    // io.chatSpace
+    
+    res.sendFile(path.join(__dirname, '..', 'views/client.html'));
+    // console.log("Process End ")
 }
 
 exports.connection = (res, req) => {
     console.log("[Controller] ====> Socket Connection ")
-    io.on('connection', function(socket){ //3
-        console.log('user connected: ', socket.id);  //3-1
-        var name = "user" + count++;                 //3-1
-        io.to(socket.id).emit('change name',name);   //3-1
-      
-        socket.on('disconnect', function(){ //3-2
-          console.log('user disconnected: ', socket.id);
-        });
-      
-        socket.on('send message', function(name,text){ //3-3
-          var msg = name + ' : ' + text;
-          console.log(msg);
-          io.emit('receive message', msg);
-        });
-      });
+    // require("../socket");
+    // io.socketOn();
+}
 
+/**
+ * 
+ * 방 생성
+ * @param {Room} req 
+ * @param {SocketId} socketId 
+ * @param {*} res 
+ * @returns 
+ */
+exports.registerRoom = (req, socketId, res) =>{
+    console.log("Register Room ");
+    console.log("req : ", req);
+    // console.log("res : ", res);
+    return socketService.create(req, socketId);
 
 }
 
+exports.getRooms = async (req, res) => {
+    console.log("[Controller] ====> getRooms");
+    // console.log(req)
+    // console.log(res)
+    // console.log(socketService.findAll())
+    //  console.log(await socketService.findAll())
+    return await socketService.findAll();
+    // return "";
+}
 
-http.listen(() => {
-    console.log(`Server is running on.`);
+exports.getRoom = async (req,res) =>{
+    console.log("[Controller] ====> getRoom ");
 
-
-    // socket.on('connection', function(socket){
-    //     console.log('user connected: ', socket.id);  //3-1
-    //     var name = "user" + count++;                 //3-1
-    //     io.to(socket.id).emit('change name',name);   //3-1
-
-    //     socket.on('disconnect', function(){ //3-2
-    //         console.log('user disconnected: ', socket.id);
-    //       });
-
-    //     socket.on('send message', function(name,text){ //3-3
-    //     var msg = name + ' : ' + text;
-    //     console.log(msg);
-    //     io.emit('receive message', msg);
-    //     });
-    // })
-    // console.log(" listen ===")
-
-
-  });
+    return await socketService.findOne(req);
+}

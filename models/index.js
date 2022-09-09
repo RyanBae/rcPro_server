@@ -22,6 +22,7 @@ db.sequelize = sequelize;
 
 // routes 사용
 db.tutorials = require("./tutorial.model")(sequelize, Sequelize);
+db.room = require('./room.model')(sequelize, Sequelize);
 
 module.exports = db;
  
