@@ -5,7 +5,9 @@ module.exports = (sequelize, Sequelize)=>{
         room_password:{type: Sequelize.STRING},
         state:{type: Sequelize.BOOLEAN},
         owner_id:{type: Sequelize.STRING},
-        open_yn:{type: Sequelize.BOOLEAN}
+        open_yn:{type: Sequelize.BOOLEAN},
+        max_count:{type: Sequelize.INTEGER},
+        count:{type:Sequelize.INTEGER}
         // owner_id:{}
     });
 

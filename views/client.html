@@ -40,7 +40,17 @@
             <input id="room-id" name="room-id" type="hidden" >
             <input id="room-name" name="room-name" type="text" placeholder="방제목입력">
             <input id="room-password" name="room-password" type="password", placeholder="비밀번호" ></input>
-            <input type="submit", value="입장" ></input>
+            <select name="room-user-count" id="room-user-count">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <!-- <option value="99"></option> -->
+            </select>
+            <input id="join-room-btn" type="submit", value="입장" ></input>
           </form>
           <form id="new-room" style="margin-left: 5px;">
             <!-- <input id="room-name" name="room-name" type="text" placeholder="방제목입력"> -->
@@ -48,6 +58,7 @@
             <input type="submit", value="방생성" ></input>
           </form>
         </div>
+        <input id="input-reset-btn" type="button", value="초기화" ></input>
     </div>
     <div class="chat-area hide-area">
       <div style="display:flex;">
@@ -139,7 +150,8 @@
 
       // 방 목록 가져오기
       socket.emit('getRooms');  // getRooms 이벤트 호출
-      socket.on('rooms', (rooms) => { // rooms 이벤트 발생
+      socket.on('rooms', async (rooms) => { // rooms 이벤트 발생
+        console.log(">> Room List Update")
           // 룸 목록 업데이트
           roomsText.textContent = "";
           console.log(rooms)
@@ -147,9 +159,9 @@
             console.log(rooms[i])
               // roomsText.append(rooms[room] + "<br>");
               if(rooms[i].open_yn === 0){
-                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'</li>')
+                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'   ('+rooms[i].count+'/'+rooms[i].max_count+')</li>')
               }else{
-                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'(비밀방)</li>')
+                roomsText.append('<li class="con-room-btn cursor-pointer" data-room="'+rooms[i].title+'" data-id="'+rooms[i].id+'" data-open="'+rooms[i].open_yn+'">'+rooms[i].title+'(비밀방)    ('+rooms[i].count+'/'+rooms[i].max_count+')</li>')
               }
           }
       });
@@ -161,37 +173,47 @@
           console.log(" new Room !!")
           console.log($('input[name="room-name"]').val());
           console.log($('input[name="room-password"]').val());
+          console.log($('#room-user-count option:selected').val());
           // Todo 패스워드 입력 여부에 따라 상태 추가
           // return 
           let room ={
             title : $('input[name="room-name"]').val(),
             roomPassword : $('input[name="room-password"]').val(),
-            state : true
+            state : true,
+            maxCount : $('#room-user-count option:selected').val()
           }
           socket.emit('newRoom', room);
       });
       
       let joinBtnPermission = false;
-      $('#join-room').on('click', function(e){
+      $('#join-room-btn').on('click', function(e){
         e.preventDefault();
-        console.log($(this).attr('data-id'))
-        console.log($('input[name=room-id]').val())
-
-        socket.emit('conRoom', $('input[name=room-id]').val())
-      })
+        // console.log($('input[name=room-id]').val())
+        if(!joinBtnPermission){
+          // if($('input[name=room-password]').val().length === 0){
+              // alert("비밀번호를 입력하세요.")
+          // }else{
+            socket.emit('conRoom', $('input[name=room-id]').val(), $('input[name=room-password]').val(), joinBtnPermission);
+          // }
+        }else{
+          socket.emit('conRoom', $('input[name=room-id]').val(), $('input[name=room-password]').val(), joinBtnPermission);
+        }
+      });
 
       // 방 로우 클릭시 input 셋팅후 비밀번호 있을경우 비밀번호 입력, 없을경우 입장
       $(document).on("click", '.con-room-btn', function(e){
         e.preventDefault();
-        console.log(" 로우 클릭")
-        console.log($(this).data('id'))
         $('#room-name').val($(this).data('room'));
         $('#room-id').val($(this).data('id'))
         if($(this).data('open') === 0){
-          // $('')
-          socket.emit('conRoom',$(this).data('id'))
+          joinBtnPermission = true;
+          $('#room-password').attr('disabled', true);
+          $('#room-user-count').attr('disabled', true);
         }else{
+          $('#room-password').attr('disabled', false);
+          $('#room-user-count').attr('disabled', true);
           $('#room-password').focus();
+          joinBtnPermission = false;
 
         }
 
@@ -234,12 +256,17 @@
       })
       
       // 방 나가기 
-      $('#exit-btn').on("click", function(e){
+      $('#exit-btn').on("click", async function(e){
         e.preventDefault();
         // console.log(" Exit!!")
         // $('#chatLog').val('');
-        socket.emit('reaveRoom')
-
+        let call = false;
+        await socket.emit('reaveRoom', $('input[name=room-id]').val(), function(callback){
+            if(callback){
+              socket.emit('getRooms');
+            }
+        });
+        
         // 방 리스트 숨김, 채팅방 입장
         $('.chat-area').removeClass('show-area');
         $('.chat-area').addClass('hide-area');
@@ -251,7 +278,22 @@
         $('.user-area').addClass('show-area');
         $('.chat-log-area').empty();
         $('#rooms').empty();
-        socket.emit('getRooms');
+        $('#room-id').val('')
+        $('#room-password').attr('disabled', false);
+        $('#room-password').attr('disabled', false);
+ 
+ 
+      });
+      
+      $('#input-reset-btn').on("click", function(e){
+        e.preventDefault();
+        $('input[name="room-name"]').val('');
+        $('input[name="room-password"]').val('');
+        $('#room-id').val('')
+        
+        $('#room-password').attr('disabled', false);
+        $('#room-user-count').attr('disabled', false);
+
       });
 
 
@@ -275,6 +317,10 @@
         $('#message').val('');
         $('#message').focus();
         
+      });
+
+      socket.on("systemMessage", function(msg, type){
+        alert(msg)
       });
 
     // 알림 띄우기
@@ -315,52 +361,60 @@
       //   $('#name').val(name);
       // });
 
-      // let typingList = [];
-      // socket.on('receive typing', function(list){
-      //   $('#typings').empty();
-      //   // console.log(list)
-      //   // console.log(list.length)
+      let typingList = [];
+      socket.on('receive typing', function(list){
+        $('#typings').empty();
+        // console.log(list)
+        // console.log(list.length)
      
-      //   for(let i in list){
-      //     console.log(list[i])
-      //     if(list[i] !== $('#name').val()){
-      //       if($('#t_'+list[i]).length === 0){
-      //         $('#typings').append("<p id=t_"+list[i]+">"+list[i]+"님이 작성중입니다...</p>")
-      //         typingList.push(list[i]);
-      //       }
-      //     }
-      //     // if(typingList.includes(list[i])){
-      //     //   console.log("!!!")
-      //     //   if($('#t_'+list[i]).length > 0){
-      //     //     $('#t_'+list[i]).remove();
+        for(let i in list){
+          console.log(list[i])
+          if(list[i] !== $('#name').val()){
+            if($('#t_'+list[i]).length === 0){
+              $('#typings').append("<p id=t_"+list[i]+">"+list[i]+"님이 작성중입니다...</p>")
+              typingList.push(list[i]);
+            }
+          }
+          // if(typingList.includes(list[i])){
+          //   console.log("!!!")
+          //   if($('#t_'+list[i]).length > 0){
+          //     $('#t_'+list[i]).remove();
                
-      //     //   }
-      //     // }
+          //   }
+          // }
 
-      //   }
+        }
 
-      //   if(list.length === 0){
-      //     console.log("!!!!!!!!! 000")
-      //     $('#typings').empty();
-      //   }
+        if(list.length === 0){
+          console.log("!!!!!!!!! 000")
+          $('#typings').empty();
+        }
 
         
-      // });
+      });
 
-
+      $(function(){
+        let focusEl = document.activeElement;
+        console.log(focusEl)
+        if($('#message') === focusEl){
+          console.log("Focus!!")
+        }
+      })
       // // 타이핑 중 이벤트 
-      // // $(function(){
-      //   $('#message').on('input', function(){
-      //     // console.log(".. ")
-      //     if($('#message').val()==''){
-      //       // console.log("0")
-      //       socket.emit('send typing', $('#name').val(), 0)
-      //     }else{
-      //       // console.log("1")
-      //       socket.emit('send typing', $('#name').val(), 1)
-      //     }
-      //   })
-      // // });
+      $(function(){
+        $('#message').on('input', function(){
+          console.log("========= input")
+          console.log($('#message').focus())
+          // console.log(".. ")
+          if($('#message').val() === ''){
+            // console.log("0")
+            socket.emit('send typing', $('#name').val(), 0)
+          }else if($('#message').val() === '' && $('#message').focus()){
+            // console.log("1")
+            socket.emit('send typing', $('#name').val(), 1)
+          }
+        })
+      });
       
     </script>
   </body>

@@ -1,8 +1,9 @@
-const path = require("path")
-
+const path = require("path");
 const db = require("../models");
 const Room = db.room;
 const Op = db.Sequelize.Op;
+// const tran = db.Sequelize.transaction();
+// const seq = db;
 
 /**
  * 방 생성
@@ -31,7 +32,9 @@ exports.create = (req,socketId,res) =>{
         room_password : req.roomPassword,
         state : req.state ? req.state : false,
         owner_id : socketId,
-        open_yn : open_yn
+        open_yn : open_yn,
+        max_count : req.maxCount,
+        count : 0
     };
         
     Room.create(room)
@@ -45,21 +48,22 @@ exports.create = (req,socketId,res) =>{
 }
 
 // Find a single Room with an id
-exports.findOne = (req, res) => {
-    const id = req.params.id;
-    Room.findByPk({id, raw:true})
+exports.findOne = async (req, res) => {
+    let result;
+    // const getRoom = new Room;
+    await Room.findOne({where:{id : {[Op.eq] : req}}, raw:true})
     .then(data =>{
-        console.log("Find One "+id);
-        console.log("Result : "+ data)
-        // res.json(data);
+        console.log("FindOne SuccessFully");
+        result = data;
+        
     }).catch(err =>{
         if(err){
             console.log("Find One Error");
         }
-        // res.status(500).send({
-        //     message: "Error retrieving Room with id=" +id
-        //   });
     });
+    // console.log("================================")
+    // console.log(result)
+    return result;
   };
   
 //   find All 방 리스트 가져오기
@@ -67,7 +71,7 @@ exports.findAll = async (req, res) => {
     // const state = 
     let condition = {state : {[Op.eq]: '1'}};
     let result = [];
-    await Room.findAll({attributes:['id','title','open_yn','state'], where:condition, raw:true})
+    await Room.findAll({attributes:['id','title','open_yn','state','count','max_count'], where:condition, raw:true})
     .then(data=>{
         console.log("FindAll SuccessFully");
         // console.log(data)
@@ -81,8 +85,7 @@ exports.findAll = async (req, res) => {
             // return err
         }
     });
-    console.log("==========================================")
-    console.log(result)
+
     return result;
 
     // console.log(rooms)
@@ -92,9 +95,49 @@ exports.findAll = async (req, res) => {
 
 }
 
+exports.countUpdate = async (id, count, type) => {
+
+    //* 트랜잭션 설정
+    
+    const tran = await db.sequelize.transaction();
+    try{
+        console.log("Count update !")
+        if(type === 0){
+            count = count-1;
+        }else{
+            count = count+1;
+        }
+        let result;
+        await Room.update(
+            {count:count},
+            {where:{id:id},
+            transaction : tran
+        }).then(data =>{
+            if(data == 1){
+                console.log("Count Up & Down SuccessFully");
+            }else{
+                console.log("Count Up & Down Fail");
+            }
+            result = data;
+        }).catch(err =>{
+            if(err){
+                console.log("Count Update Error");
+            }
+        });
+
+        await tran.commit();
+        return result;
+
+    }catch(err){
+        console.log("Transaction Error")
+        await tran.rollback();
+    }
+    
+}
+
 // 방 상태 변경
 exports.update = (req, res)=>{
-    const id = req.id;
+    const id = id;
     Room.update(req, {
         where:{id:id}
     })

@@ -102,8 +102,13 @@ io.on('connection', function(socket){
     // 유저 이름 변경 
     socket.on('setUserName', (chgName) => {
         if(_userName !== chgName){
-            // console.log(" Set User Name")
+            console.log(" Set User Name")
             // console.log("Sockid : "+socket.id)
+            console.log("socket name 1 : "+socket.name);
+            
+            socket.name = chgName;
+            console.log("socket name 2 : "+socket.name);
+
             _userName = chgName;
             // console.log('Change UserName -> Socket ID: ', socket.id, ", UserName : ",_userName);
             io.to(socket.id).emit('getUserName', _userName)
@@ -115,11 +120,13 @@ io.on('connection', function(socket){
 
     // 룸 리스트 가져오기
     socket.on('getRooms', async () => { 
+        console.log(" GET Rooms >>>>>>>>>>")
         // 다른 네임스페이스의 객체에도 접근할 수 있다.
         // console.log(io.sockets.adapter)
         
+        // console.log(publicRooms())
         // io.to(socket.id).emit('rooms', publicRooms());
-        io.to(socket.id).emit('rooms', await socketController.getRooms());
+        await io.to(socket.id).emit('rooms', await socketController.getRooms());
     });
 
     // 새로운방 만들고 접속
@@ -140,13 +147,43 @@ io.on('connection', function(socket){
     });
 
     // 방 접속시 메세지
-    socket.on('conRoom',(data)=>{
+    socket.on('conRoom', async (roomId, roomPw, roomPermission)=>{
         console.log("Connection Room");
-        console.log(data)
-        roomName = data;
-        socket.join(roomName);
-        console.log('Connection User Room -> Socket ID: ', socket.id, ", UserName : ",_userName);
-        io.to(roomName).emit('joinRoom', roomName);
+        // console.log(roomId);
+        // console.log(roomPw);
+        // console.log(roomPermission);
+        let room = await socketController.getRoom(roomId);
+        if(room !== null){
+            if(roomPermission){
+                // 오픈 방으로 무조건 조인 
+                // roomName = roomId;
+                roomName = room.title;
+                socket.join(roomName);
+                io.to(roomName).emit('joinRoom', roomName);
+                // room count +1
+                socketController.countUpDown(roomId, room.count, 1);
+
+            }else{
+                if(roomPw.length > 0){
+                    // 방 비밀번호 매칭 하여 같으면 조인
+                    if(room.room_password === roomPw){
+                        roomName = room.title;
+                        socket.join(roomName);
+                        io.to(roomName).emit('joinRoom', roomName);
+                        // room count +1
+                        socketController.countUpDown(roomId, 1, 1);
+                    }else{
+                        io.to(socket.id).emit('systemMessage', "비밀번호를 확인해주세요.", "0");
+                    }
+                    
+                }else{
+                    io.to(socket.id).emit('systemMessage', "비밀번호를 확인해주세요.", "0");
+                }
+    
+            }
+        }else{
+            io.to(socket.id).emit('systemMessage', "입력한 방 제목을 확인해주세요.", "0");
+        }
     })
 
     // 연결이 종료 되었을경우
@@ -159,12 +196,19 @@ io.on('connection', function(socket){
     // });
 
     // 방을 나갔을경우
-    socket.on('reaveRoom', ()=>{
+    socket.on('reaveRoom', async (roomId, callback)=>{
         console.log('User Leave Room -> Socket ID : ', socket.id," , UserName : ",_userName);
-        socket.leave(roomName);
-        console.log("reave Room : "+roomName)
-        // io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
-        io.to(roomName).emit('receiveMessage', _userName+" 님이 퇴장하였습니다.", 0);
+        let room = await socketController.getRoom(roomId);
+        let updateResult = await socketController.countUpDown(roomId, room.count, 0);
+        console.log(">>> "+ updateResult)
+        if(updateResult == 1){
+            await socket.leave(roomName);
+            console.log("reave Room : "+roomName)
+            await io.to(roomName).emit('receiveMessage', _userName+" 님이 퇴장하였습니다.", 0);
+            callback(true);
+            // io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
+        }
+
     })
 
     // 접속자 메세지 남기기
@@ -175,6 +219,7 @@ io.on('connection', function(socket){
         io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
     });
 
+    // 메세지 전송, 수정하기 
     socket.on('sendMessage', function(name,text){ //3-3
       var msg = name + ' : ' + text;
       console.log(msg);
@@ -193,6 +238,25 @@ io.on('connection', function(socket){
 
     })
 
+
+    const typingList = [];
+    socket.on('send typing', function(name, type){
+        if(type === 0){
+            if(typingList.includes(name)){
+                // console.log(" 있다")
+                // typingList.push(name);
+                let deleteIndex = typingList.indexOf(name);
+                typingList.splice(deleteIndex);
+            }
+        }else{
+            // console.log("1111")
+            if(!typingList.includes(name)){
+                typingList.push(name);
+            }
+        }
+        console.log(typingList)
+        io.emit('receive typing', typingList)
+    });
 
 
 
@@ -287,7 +351,7 @@ debug.on('connection', (socket)=>{
     socket.on('getRooms', () => { 
         // 다른 네임스페이스의 객체에도 접근할 수 있다.
         console.log(io.sockets.adapter)
-        socket.emit('rooms', publicRooms());
+        socket.to(socket.id).emit('rooms', publicRooms());
       });
 })
 

@@ -67,6 +67,13 @@ exports.getRooms = async (req, res) => {
 
 exports.getRoom = async (req,res) =>{
     console.log("[Controller] ====> getRoom ");
+    console.log(req)
 
     return await socketService.findOne(req);
+}
+
+exports.countUpDown = (id, count, type) => {
+    console.log("[Controller] ==> Room count Up Down");
+    
+    return socketService.countUpdate(id, count, type);
 }
