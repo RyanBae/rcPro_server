@@ -59,6 +59,7 @@ exports.findOne = async (req, res) => {
     }).catch(err =>{
         if(err){
             console.log("Find One Error");
+            result = null;
         }
     });
     // console.log("================================")
@@ -107,9 +108,17 @@ exports.countUpdate = async (id, count, type) => {
         }else{
             count = count+1;
         }
+        // console.log("Count : "+count);
+
+        // 마지막 인원 나갈경우 방 close
+        let state = 1;
+        if(count === 0){
+            state = 0;
+        }
+
         let result;
         await Room.update(
-            {count:count},
+            {count:count,state:state},
             {where:{id:id},
             transaction : tran
         }).then(data =>{

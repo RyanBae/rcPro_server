@@ -11,10 +11,10 @@ const socketService = require('../service/socket.service');
 
 // fs.readFile(path.join(__dirname, '..', '..', 'foo.bar'))
 exports.rooms = (res, req) =>{
-    require("../socket");
+    // require("../socket");
     // let ro = require("../server");
     
-    req.sendFile(path.join(__dirname, '..', 'views/rooms.html'));
+    // req.sendFile(path.join(__dirname, '..', 'views/rooms.html'));
 
 }
 
@@ -24,11 +24,11 @@ exports.rooms = (res, req) =>{
  * @param {*} req 
  */
 exports.socketPage = (req, res) =>{
-    // console.log("Socket Page")
+    console.log("Socket Page")
     require("../socket");
     // io.socketOn();
     // io.chatSpace
-    
+    console.log(req.session)
     res.sendFile(path.join(__dirname, '..', 'views/client.html'));
     // console.log("Process End ")
 }
