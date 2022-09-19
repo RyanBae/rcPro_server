@@ -1,8 +1,18 @@
 const SocketIO = require("socket.io");
 const http = require("./server");
-const { instrument } = require("@socket.io/admin-ui");
+// const { instrument } = require("@socket.io/admin-ui");
+// 소켓 내에서 세션데이터 접근 가능하도록하는 모듈
+const ios = require("express-socket.io-session");
 // const { rooms } = require("./controllers/socket.controller");
 const socketController = require("./controllers/socket.controller");
+
+
+
+ 
+// 소켓 구문 시작 
+
+
+
 
 // console.log(http)
 const io = SocketIO(http,{
@@ -13,15 +23,20 @@ const io = SocketIO(http,{
     },
 });
 
+// console.log(sessionOption)
+// 모듈과 세션 연결 
+// io.use(ios(session, { autoSave:true }));  
+
+
 // const adminNamespace = io.of("/admin");
-instrument(io, {
-    namespaceName: "/admin",
-    auth: {
-        type: "basic",
-        username: "admin",
-        password: "$2a$12$Ln/hFriz69dGkcVS0F2LN.NcNpAZLJivvH9YckXbRCi0hf3W6RPHW"
-    },
-  });
+// instrument(io, {
+//     namespaceName: "/admin",
+//     auth: {
+//         type: "basic",
+//         username: "admin",
+//         password: "$2a$12$Ln/hFriz69dGkcVS0F2LN.NcNpAZLJivvH9YckXbRCi0hf3W6RPHW"
+//     },
+//   });
 
   function publicRooms(){
     const {
@@ -42,8 +57,8 @@ instrument(io, {
         }
     });
     console.log("Public Rooms")
-    console.log(rooms)
-    console.log(publicRooms)
+    // console.log(rooms)
+    // console.log(publicRooms)
     return publicRooms;
   }
 
@@ -92,6 +107,14 @@ var rcount=1;
 
 // var _userName;
 io.on('connection', function(socket){ 
+    console.log("======================> Connection ");
+    console.log(http._events.request)
+    // console.log(socket.handshake)
+    
+    // 소켓 내에서 세션에 접근 
+    // var userID = socket.handshake.session.adminID;  
+    // 소켓 내에서 세션에 접근   
+    // var DEPT_CD = socket.handshake.session.DEPT_CD; 
     var roomName;
     var _userName = "User_" + count++;   
     //default User id 
@@ -155,23 +178,36 @@ io.on('connection', function(socket){
         let room = await socketController.getRoom(roomId);
         if(room !== null){
             if(roomPermission){
-                // 오픈 방으로 무조건 조인 
-                // roomName = roomId;
-                roomName = room.title;
-                socket.join(roomName);
-                io.to(roomName).emit('joinRoom', roomName);
-                // room count +1
-                socketController.countUpDown(roomId, room.count, 1);
+                if(room.max_count > room.count){
+                    roomName = room.title;
+                    // 오픈 방으로 무조건 조인 
+                    // roomName = roomId;
+                    socket.join(roomName);
+                    io.to(roomName).emit('joinRoom', roomName);
+                    // room count +1
+                    socketController.countUpDown(roomId, room.count, 1);
+                }else{
+                    await io.to(socket.id).emit('systemMessage', "인원이 초과하였습니다.", "0");    
+                    await io.to(socket.id).emit('rooms', await socketController.getRooms());
+                }
 
             }else{
                 if(roomPw.length > 0){
                     // 방 비밀번호 매칭 하여 같으면 조인
                     if(room.room_password === roomPw){
-                        roomName = room.title;
-                        socket.join(roomName);
-                        io.to(roomName).emit('joinRoom', roomName);
+                        console.log(room.max_count)
+                        console.log(room.count)
+                        if(room.max_count > room.count){
+                            roomName = room.title;
+                            socket.join(roomName);
+                            io.to(roomName).emit('joinRoom', roomName);
                         // room count +1
-                        socketController.countUpDown(roomId, 1, 1);
+                            socketController.countUpDown(roomId, room.count, 1);
+                        }else{
+                            await io.to(socket.id).emit('systemMessage', "인원이 초과하였습니다.", "0");    
+                            await io.to(socket.id).emit('rooms', await socketController.getRooms());
+                        }
+                        
                     }else{
                         io.to(socket.id).emit('systemMessage', "비밀번호를 확인해주세요.", "0");
                     }
@@ -199,6 +235,7 @@ io.on('connection', function(socket){
     socket.on('reaveRoom', async (roomId, callback)=>{
         console.log('User Leave Room -> Socket ID : ', socket.id," , UserName : ",_userName);
         let room = await socketController.getRoom(roomId);
+        
         let updateResult = await socketController.countUpDown(roomId, room.count, 0);
         console.log(">>> "+ updateResult)
         if(updateResult == 1){

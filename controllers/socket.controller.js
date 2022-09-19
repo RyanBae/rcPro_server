@@ -9,6 +9,39 @@ const socketService = require('../service/socket.service');
 // const io = require('socket.io')(app); 
 // const PORT = process.env.PORT || 3030;
 
+<<<<<<< HEAD
+=======
+// fs.readFile(path.join(__dirname, '..', '..', 'foo.bar'))
+exports.rooms = (res, req) =>{
+    // require("../socket");
+    // let ro = require("../server");
+    
+    // req.sendFile(path.join(__dirname, '..', 'views/rooms.html'));
+
+}
+
+/**
+ * 채팅페이지 렌딩/SocketIO 연결
+ * @param {*} res 
+ * @param {*} req 
+ */
+exports.socketPage = (req, res) =>{
+    console.log("Socket Page")
+    require("../socket");
+    // io.socketOn();
+    // io.chatSpace
+    console.log(req.session)
+    res.sendFile(path.join(__dirname, '..', 'views/client.html'));
+    // console.log("Process End ")
+}
+
+exports.connection = (res, req) => {
+    console.log("[Controller] ====> Socket Connection ")
+    // require("../socket");
+    // io.socketOn();
+}
+
+>>>>>>> 4ed745f6a7217d3f1527ea04611b42ba1581bee7
 /**
  * 
  * 방 생성

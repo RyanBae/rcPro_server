@@ -5,10 +5,21 @@ const bodyParser = require("body-parser");
 const fs = require("fs")
 const cors = require("cors");
 const path = require('path');
+const session = require('express-session');
 
 
 const app = express();
 const http = Http.createServer(app);
+
+// 세션 설정
+app.use(session({                                            
+  secret:"asdfasffdas",
+  resave:false,
+  saveUninitialized:true
+}));
+
+
+// console.log(sessions)
 
 
 app.set('views', path.join(__dirname, 'views'));
@@ -20,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 var corsOptions = {
   origin: "http://localhost:8080"
 };
-
+// app.use(sessionOption);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -47,4 +58,4 @@ http.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
  
-module.exports = http;
+module.exports = http, session;

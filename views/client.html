@@ -152,6 +152,7 @@
       socket.emit('getRooms');  // getRooms 이벤트 호출
       socket.on('rooms', async (rooms) => { // rooms 이벤트 발생
         console.log(">> Room List Update")
+          $('#rooms').empty();
           // 룸 목록 업데이트
           roomsText.textContent = "";
           console.log(rooms)
@@ -277,7 +278,7 @@
         $('.user-area').removeClass('hide-area');
         $('.user-area').addClass('show-area');
         $('.chat-log-area').empty();
-        $('#rooms').empty();
+        //$('#rooms').empty();
         $('#room-id').val('')
         $('#room-password').attr('disabled', false);
         $('#room-password').attr('disabled', false);
