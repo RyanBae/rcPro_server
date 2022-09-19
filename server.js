@@ -5,21 +5,10 @@ const bodyParser = require("body-parser");
 const fs = require("fs")
 const cors = require("cors");
 const path = require('path');
-const session = require('express-session');
 
 
 const app = express();
 const http = Http.createServer(app);
-
-// 세션 설정
-app.use(session({                                            
-  secret:"asdfasffdas",
-  resave:false,
-  saveUninitialized:true
-}));
-
-
-// console.log(sessions)
 
 
 app.set('views', path.join(__dirname, 'views'));
@@ -31,7 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 var corsOptions = {
   origin: "http://localhost:8080"
 };
-// app.use(sessionOption);
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -44,9 +33,7 @@ db.sequelize.sync();
 
 // =========== Routes Add Area ===========
 require("./routes/tutorial.routes")(app);
-require("./routes/main.routes")(app);
 require("./routes/socket.routes")(app);
-
 // require("./socket");
 
 
@@ -58,4 +45,4 @@ http.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
  
-module.exports = http, session;
+module.exports = http;
