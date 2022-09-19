@@ -33,7 +33,8 @@ db.sequelize.sync();
 
 // =========== Routes Add Area ===========
 require("./routes/tutorial.routes")(app);
-require("./routes/socket.routes")(app);
+require("./routes/main.routes")(app);
+require("./routes/room.routes")(app);
 // require("./socket");
 
 

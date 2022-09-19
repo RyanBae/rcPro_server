@@ -227,8 +227,10 @@
 
 
       // 방입장 
-      socket.on('joinRoom', (room)=>{
-        // console.log("join Room !")
+      socket.on('joinRoom', (roomName, roomId)=>{
+        console.log("join Room !")
+        console.log(roomName)
+        console.log(roomId)
         // 방 리스트 숨김, 채팅방 입장
         if($('#chatLog').length === 0){
           $('.chat-log-area').append('<textarea id="chatLog" class="chat_log" readonly></textarea>')
@@ -245,7 +247,9 @@
         $('#room-name').val("")
         $('#room-password').val("")
         // console.log(room)
-        $('#con-room-name').text(room)
+        // $('input[name=room-id]').val(roomId)
+        $('#room-id').val(roomId)
+        $('#con-room-name').text(roomName)
         socket.emit('conUserMsg');
         socket.emit('inUsers');
 

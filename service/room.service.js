@@ -11,9 +11,10 @@ const Op = db.Sequelize.Op;
  * @param {SocketId} socketId 
  * @param {*} res 
  */
-exports.create = (req,socketId,res) =>{
+exports.create = async (req,socketId,res) =>{
     console.log(" Socket Service > Create");
 
+    let result;
     if (!req.title) {
         console.log("Title Undefind");
         // res.status(400).send({
@@ -37,14 +38,18 @@ exports.create = (req,socketId,res) =>{
         count : 0
     };
         
-    Room.create(room)
+    await Room.create(room)
     .then(data => {
-        console.log(data)
-        res.send(data);
+        console.log("Create Room Data SuccessFully");
+        result = data['dataValues'];
     })
     .catch(err => {
-        console.log(res);
-        });
+        if(err){
+            console.log("Create Room Error !!");
+            result = null;
+        }
+    });
+    return result;
 }
 
 // Find a single Room with an id

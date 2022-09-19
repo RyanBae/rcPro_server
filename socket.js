@@ -2,9 +2,9 @@ const SocketIO = require("socket.io");
 const http = require("./server");
 // const { instrument } = require("@socket.io/admin-ui");
 // 소켓 내에서 세션데이터 접근 가능하도록하는 모듈
-const ios = require("express-socket.io-session");
+// const ios = require("express-socket.io-session");
 // const { rooms } = require("./controllers/socket.controller");
-const socketController = require("./controllers/socket.controller");
+const roomController = require("./controllers/room.controller");
 
 
 
@@ -149,23 +149,16 @@ io.on('connection', function(socket){
         
         // console.log(publicRooms())
         // io.to(socket.id).emit('rooms', publicRooms());
-        await io.to(socket.id).emit('rooms', await socketController.getRooms());
+        await io.to(socket.id).emit('rooms', await roomController.getRooms());
     });
 
     // 새로운방 만들고 접속
-    socket.on('newRoom', (data)=>{
-        console.log("New Room")
-        console.log(data)
-        // console.log(data.title)
-        // console.log(data.roomPassword)
-    
-        socketController.registerRoom(data, socket.id);
+    socket.on('newRoom', async (data)=>{
+        let room = await roomController.registerRoom(data, socket.id);
         roomName = data.title
         socket.join(roomName);
-        console.log("Sock ID : "+socket.id)
-        console.log("Room Name : "+roomName)
-        console.log('New Room -> Socket ID: ', socket.id, ", UserName : ",_userName);
-        io.to(roomName).emit('joinRoom', roomName);
+        await roomController.countUpDown(room.id, room.count, 1);
+        await io.to(roomName).emit('joinRoom', roomName, room.id);
         
     });
 
@@ -175,7 +168,7 @@ io.on('connection', function(socket){
         // console.log(roomId);
         // console.log(roomPw);
         // console.log(roomPermission);
-        let room = await socketController.getRoom(roomId);
+        let room = await roomController.getRoom(roomId);
         if(room !== null){
             if(roomPermission){
                 if(room.max_count > room.count){
@@ -183,12 +176,12 @@ io.on('connection', function(socket){
                     // 오픈 방으로 무조건 조인 
                     // roomName = roomId;
                     socket.join(roomName);
-                    io.to(roomName).emit('joinRoom', roomName);
+                    io.to(roomName).emit('joinRoom', roomName, room.id);
                     // room count +1
-                    socketController.countUpDown(roomId, room.count, 1);
+                    roomController.countUpDown(roomId, room.count, 1);
                 }else{
                     await io.to(socket.id).emit('systemMessage', "인원이 초과하였습니다.", "0");    
-                    await io.to(socket.id).emit('rooms', await socketController.getRooms());
+                    await io.to(socket.id).emit('rooms', await roomController.getRooms());
                 }
 
             }else{
@@ -200,12 +193,12 @@ io.on('connection', function(socket){
                         if(room.max_count > room.count){
                             roomName = room.title;
                             socket.join(roomName);
-                            io.to(roomName).emit('joinRoom', roomName);
+                            io.to(roomName).emit('joinRoom', roomName, room.id);
                         // room count +1
-                            socketController.countUpDown(roomId, room.count, 1);
+                            roomController.countUpDown(roomId, room.count, 1);
                         }else{
                             await io.to(socket.id).emit('systemMessage', "인원이 초과하였습니다.", "0");    
-                            await io.to(socket.id).emit('rooms', await socketController.getRooms());
+                            await io.to(socket.id).emit('rooms', await roomController.getRooms());
                         }
                         
                     }else{
@@ -234,16 +227,20 @@ io.on('connection', function(socket){
     // 방을 나갔을경우
     socket.on('reaveRoom', async (roomId, callback)=>{
         console.log('User Leave Room -> Socket ID : ', socket.id," , UserName : ",_userName);
-        let room = await socketController.getRoom(roomId);
-        
-        let updateResult = await socketController.countUpDown(roomId, room.count, 0);
-        console.log(">>> "+ updateResult)
-        if(updateResult == 1){
-            await socket.leave(roomName);
-            console.log("reave Room : "+roomName)
-            await io.to(roomName).emit('receiveMessage', _userName+" 님이 퇴장하였습니다.", 0);
-            callback(true);
-            // io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
+        let room = await roomController.getRoom(roomId);
+        console.log("============================")
+        console.log(room)
+        console.log("============================")
+        if(room !== null){
+            let updateResult = await roomController.countUpDown(roomId, room.count, 0);
+            console.log(">>> "+ updateResult)
+            if(updateResult == 1){
+                await socket.leave(roomName);
+                console.log("reave Room : "+roomName)
+                await io.to(roomName).emit('receiveMessage', _userName+" 님이 퇴장하였습니다.", 0);
+                callback(true);
+                // io.to(roomName).emit('roomUserCount', userFromRoom(roomName)[0].length);
+            }
         }
 
     })

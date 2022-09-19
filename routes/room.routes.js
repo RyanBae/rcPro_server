@@ -1,10 +1,9 @@
 
 module.exports = app => {
-    const socket = require('../controllers/socket.controller')
+    const room = require('../controllers/room.controller')
     // const de = require('../server')
 
-      
     var router = require("express").Router();
 
-    app.use("/api/socket", router);
+    app.use("/api/room", router);
 }

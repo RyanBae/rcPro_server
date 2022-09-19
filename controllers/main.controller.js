@@ -8,11 +8,6 @@ const path = require("path")
  * @param {*} req 
  */
  exports.chatPage = (req, res) =>{
-    // console.log("Socket Page")
     require("../socket");
-    // io.socketOn();
-    // io.chatSpace
-    
     res.sendFile(path.join(__dirname, '..', 'views/client.html'));
-    // console.log("Process End ")
 }
